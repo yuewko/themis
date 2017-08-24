@@ -1,33 +1,31 @@
 package pdp
 
-import (
-	"fmt"
-)
+import "fmt"
 
-type LocalSelector struct {
+type PIPSelector struct {
 	content string
 	item    string
 	path    []Expression
 	t       int
 }
 
-func MakeLocalSelector(content, item string, path []Expression, t int) LocalSelector {
-	return LocalSelector{
+func MakePIPSelector(content, item string, path []Expression, t int) PIPSelector {
+	return PIPSelector{
 		content: content,
 		item:    item,
 		path:    path,
 		t:       t}
 }
 
-func (s LocalSelector) GetResultType() int {
+func (s PIPSelector) GetResultType() int {
 	return s.t
 }
 
-func (s LocalSelector) describe() string {
+func (s PIPSelector) describe() string {
 	return fmt.Sprintf("selector(%s.%s)", s.content, s.item)
 }
 
-func (s LocalSelector) calculate(ctx *Context) (AttributeValue, error) {
+func (s PIPSelector) calculate(ctx *Context) (AttributeValue, error) {
 	item, err := ctx.getContentItem(s.content, s.item)
 	if err != nil {
 		return undefinedValue, bindError(err, s.describe())
