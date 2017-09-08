@@ -225,10 +225,9 @@ policies:
            - equal:
              - attr: strAttr
              - selector:
-                uri: "pip:content/content-item"
+                uri: "pip:mcafee-ts/domain-category"
                 type: "string"
                 path:
-                - attr: netAttr
                 - attr: domAttr
       effect: Permit
   - id: Nested Mappers Policy Set
@@ -271,7 +270,7 @@ policies:
         id: Mapper
         map:
           selector:
-            uri: "pip:10.0.0.3/domain-category"
+            uri: "pip:mcafee-ts/domain-category"
             type: "string"
             path:
             - attr: domAttr
