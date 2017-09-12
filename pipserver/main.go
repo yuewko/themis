@@ -1,5 +1,10 @@
 package main
 
+// #cgo LDFLAGS: libts.a -lpthread -ldl -lrt -lssl -lcrypto
+// #include "ts.h"
+// #include "test.h"
+import "C"
+
 import (
 	"encoding/json"
 	"fmt"
@@ -14,6 +19,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
+
+// func C.Init() int
+
+func init() {
+    _ = C.Init()
+}
 
 // server is used to implement helloworld.GreeterServer.
 type server struct {
@@ -51,18 +62,21 @@ func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response
 	inAttrs := in.GetAttributes()
 	fmt.Printf("inAttrs[0] is '%v'\n", inAttrs[0])
 	domainStr := inAttrs[0].GetValue()
+/*
 	category, ok := s.CategoryMap[domainStr]
 	if !ok {
 		category = "unknown category"
 		responseStatus = pb.Response_NOTFOUND
 	}
-
+*/
+	category := C.GoString(C.RateUrl(C.CString(domainStr)))
 	respAttr := &pb.Attribute{Value: category}
 	values := []*pb.Attribute{respAttr}
 	return &pb.Response{Status: responseStatus, Values: values}, nil
 }
 
 func main() {
+	// _ = C.RateUrl(C.CString("www.abcnews.com"))
 	pipServiceName := "mcafee-ts"
 	conn, err := pb.GetPIPConnection(pipServiceName)
 	if err != nil {
