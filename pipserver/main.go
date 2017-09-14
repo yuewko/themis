@@ -1,19 +1,23 @@
 package main
 
 // #cgo LDFLAGS: libts.a -lpthread -ldl -lrt -lssl -lcrypto
+// #include <stdlib.h>
 // #include "ts.h"
 // #include "test.h"
 import "C"
 
 import (
 	"encoding/json"
-	"fmt"
+//	"fmt"
 	"net"
 	"os"
+	"unsafe"
 
 	log "github.com/Sirupsen/logrus"
 
 	pb "github.com/infobloxopen/themis/pip-service"
+
+	"github.com/infobloxopen/themis/pdp"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -60,7 +64,7 @@ func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response
 		responseStatus = pb.Response_SERVICEERROR
 	}
 	inAttrs := in.GetAttributes()
-	fmt.Printf("inAttrs[0] is '%v'\n", inAttrs[0])
+	// fmt.Printf("inAttrs[0] is '%v'\n", inAttrs[0])
 	domainStr := inAttrs[0].GetValue()
 /*
 	category, ok := s.CategoryMap[domainStr]
@@ -69,8 +73,16 @@ func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response
 		responseStatus = pb.Response_NOTFOUND
 	}
 */
-	category := C.GoString(C.RateUrl(C.CString(domainStr)))
-	respAttr := &pb.Attribute{Value: category}
+	c_category := C.RateUrl(C.CString(domainStr))
+	var category string
+	if c_category != nil {
+		category = C.GoString(c_category)
+		C.free(unsafe.Pointer(c_category))
+	} else {
+		category = ""
+	}
+	respAttr := &pb.Attribute{Type: pdp.TypeListOfStrings, Value: category}
+	// fmt.Printf("respAttr is '%v'\n", respAttr)
 	values := []*pb.Attribute{respAttr}
 	return &pb.Response{Status: responseStatus, Values: values}, nil
 }
