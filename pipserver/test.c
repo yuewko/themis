@@ -6,10 +6,11 @@
 #include "ts.h"
 
 static TS_Handle TsHandle=NULL;
-static char TsResult[4000];
 
-static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
+static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 {
+     char *ts_result=NULL;
+
      TS_Url parsed_url;
      TS_Attributes attributes;
      TS_Categories categories;
@@ -17,7 +18,6 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 
      char cat_names[4000];
      int len = 0;
-     int return_val = 1; // 1 hit, 0: error, -1 un-categorized
      char delimiter[] = ",";
      int delimiter_len = strlen(delimiter);
      int num_cats;
@@ -27,7 +27,7 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
      if (TS_OK != TS_AttributesCreate(ts_handle, &attributes)) {
 	  printf("TS_AttributesCreate failed. Abort.\n");
 	  TS_HandleDestroy(&ts_handle);
-	  return 0;
+	  return ts_result;
      }
      // printf("After TS_AttributesCreate()\n");
 
@@ -35,7 +35,7 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  printf("TS_CategoriesCreate failed. Abort.\n");
 	  TS_AttributesDestroy(ts_handle, &attributes);
 	  TS_HandleDestroy(&ts_handle);
-	  return 0;
+	  return ts_result;
      }
      // printf("After TS_CategoriesCreate()\n");
 
@@ -44,7 +44,7 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  TS_AttributesDestroy(ts_handle, &attributes);
 	  TS_CategoriesDestroy(ts_handle, &categories);
 	  TS_HandleDestroy(&ts_handle);
-	  return 0;
+	  return ts_result;
      }
      // printf("After TS_CategoriesCategoryRemoveAll()\n");
 
@@ -53,7 +53,7 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  TS_AttributesDestroy(ts_handle, &attributes);
 	  TS_CategoriesDestroy(ts_handle, &categories);
 	  TS_HandleDestroy(&ts_handle);
-	  return 0;
+	  return ts_result;
      }
      // printf("After TS_UrlCreate()\n");
 
@@ -62,7 +62,6 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 			      NULL,
 			      parsed_url)) {
 	  printf("TS_UrlParse failed. Abort.\n");
-	  return_val = 0;
 	  goto done;
      }
      // printf("After TS_UrlParse()\n");
@@ -78,11 +77,10 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	      0,
 	      NULL)) {
 	  printf("TS_RateUrl failed. Abort.\n");
-	  return_val = 0;
 	  goto done;
      }
      // printf("After TS_RateUrl()\n");
-
+/*
      if (TS_OK != TS_AttributesInfoGet(ts_handle,
 				       attributes,
 				       TS_ATTRIBUTES_INFO_REPUTATION,
@@ -92,7 +90,7 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
      } else {
 	  printf("Webrep is %d\n", webrep);
      }
-
+*/
      // Get categories number
      if (TS_OK != TS_CategoriesCount(ts_handle, categories, &num_cats)) {
 	  printf("Get categories number error!\n");
@@ -122,23 +120,24 @@ static int rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	      cat_names,
 	      &len)) {
 	  printf("TS_CategoriesToString failed. Abort.\n");
-	  return_val = 0;
 	  goto done;
      } else {
 	  cat_names[len] = '\0';
-	  strcpy(TsResult, cat_names);
 	  if (strlen(cat_names) <= 1) {
-	       return_val = -1;
 	       if (verbosity >= 1)
     		    printf("x URL: '%s' is uncategorized!\n", url);
 	  }
 	  else {
+	       ts_result = strdup(cat_names);
 	       if (verbosity >= 2) {
 		    //
-		    printf("v URL: '%s' is categorized as :\t '%s'; Category Codes: ", url, cat_names);
+		    printf("URL: '%s' is categorized as :'%s'\n", url, cat_names);
+/*
+                    printf("Category Codes: \n");
 		    for (i=0; i<num_cats; i++) {
 			 printf(" %u ", cat_array[i]);
 		    }
+*/
 		    printf("\n");
 	       }
 	  }
@@ -154,7 +153,7 @@ done:
      TS_UrlDestroy(ts_handle, &parsed_url);
      //TS_HandleDestroy(&ts_handle);
 
-     return return_val;
+     return ts_result;
 }
 
 
@@ -223,9 +222,12 @@ int Init() {
 }
 
 
+/*
+ rate_url() returns a malloc'ed string that
+ must be free'ed in calling code
+*/
 char *RateUrl(const char *url) {
-  rate_url(TsHandle, url, 2);
-  return TsResult;
+    return rate_url(TsHandle, url, 2);
 }
 
 /*

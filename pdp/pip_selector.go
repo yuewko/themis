@@ -3,6 +3,7 @@ package pdp
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	ps "github.com/infobloxopen/themis/pip-service"
 	"google.golang.org/grpc"
@@ -74,11 +75,20 @@ func (s PIPSelector) getAttributeValue(ctx *Context) (AttributeValue, error) {
 		return undefinedValue, bindError(fmt.Errorf("Unexpected response status '%s'", r.Status), s.describe())
 	}
 	res := r.GetValues()
+	// fmt.Printf("res = '%v'\n", res)
+	// For now, assume response only contain one attribute
 	val := res[0].GetValue()
-
+	t := res[0].GetType()
 	fmt.Printf("PIP returned value='%v'\n", val)
+	switch t {
+	case TypeString:
+		return MakeStringValue(val), nil
+		
+	case TypeListOfStrings:
+		return MakeListOfStringsValue(strings.Split(val, ",")), nil
+	}
 
-	return MakeStringValue(val), nil
+	return undefinedValue, bindError(fmt.Errorf("Unexpected response value type '%d'", t), s.describe())
 }
 
 func (s PIPSelector) calculate(ctx *Context) (AttributeValue, error) {
