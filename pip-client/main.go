@@ -76,15 +76,11 @@ func main() {
 	defer conn.Close()
 	c := pb.NewPIPClient(conn)
 
-	//makeQuery(testData)
-	// test()
-	// runConcurrentQuery(numOfWorker int, duration int, client pb.PIPClient,
-	// results chan QueryResult, stop chan bool)
 	runConcurrentQuery(conf.NumOfWorkers, conf.TestDuration, c, &testData, testResult, stop)
 	qps, hitRate := aggregateResults(testResult, 5)
 	//log.Infof("QPS: %d, Hit Rate: %v", qps, hitRate)
 	writeResultToFile(conf.TestResult, conf.NumOfWorkers, qps, hitRate)
-	log.Infoln("Test is finished")
+	log.Infoln("# Test is finished")
 	log.Infof("# Summary: Number of threads: %d, QPS: %d, HitRate: %v",
 		conf.NumOfWorkers, qps, hitRate)
 
@@ -133,44 +129,7 @@ func loadTestData(inputFile string, lst *[]string) error {
 	return nil
 }
 
-// func createClient(address string, domain string) {
-// 	// Set up a connection to the server.
-// 	conn, err := grpc.Dial(address, grpc.WithInsecure())
-// 	if err != nil {
-// 		log.Fatalf("did not connect: %v", err)
-// 	}
-// 	defer conn.Close()
-
-// 	c := ps.NewPIPClient(conn)
-// 	attrList := []*ps.Attribute{}
-// 	attr := ps.Attribute{Id: "1", Type: 6, Value: domain}
-// 	attrList = append(attrList, &attr)
-// 	log.Debugf("attrList: %+v", attrList)
-// 	request := &ps.Request{QueryType: "domain-category", Attributes: attrList}
-// 	log.Debugf("request: %+v", request)
-
-// 	r, err := c.GetAttribute(context.Background(), request)
-// 	if err != nil {
-// 		log.Errorln(err)
-// 	}
-// 	if r.Status != ps.Response_OK {
-// 		log.Debugf("Return Status: %v", r.Status)
-// 	}
-
-// 	res := r.GetValues()
-// 	log.Debugf("Return values: %+v", res)
-//
-// }
-
-func makeQuery(testLst []string) {
-	log.Debugf("Input Test list: %+v", testLst)
-	for _, domain := range testLst {
-		log.Debugf("query: %s", domain)
-		// createClient("127.0.0.1:5368", domain)
-		go queryURL(domain)
-	}
-}
-
+// example func to make a single query at a time
 func queryURL(url string) {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
@@ -180,8 +139,7 @@ func queryURL(url string) {
 	defer conn.Close()
 	c := pb.NewPIPClient(conn)
 
-	// Contact the server and print out its response.
-
+	// Contact the server and print out its response
 	// r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name: name})
 	// if err != nil {
 	// 	log.Fatalf("could not greet: %v", err)
