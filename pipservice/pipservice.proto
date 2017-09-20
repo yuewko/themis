@@ -1,30 +1,13 @@
 // James Xiang Test definition
 syntax = "proto3";
 
-// option java_multiple_files = true;
-// option java_package = "io.grpc.examples.helloworld";
-// option java_outer_classname = "HelloWorldProto";
-
 package pipservice;
 
 // The greeting service definition.
 service PIP {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
   // Sends a query
   rpc GetCategories (Request) returns (Response) {}
 }
-
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
-}
-
-// The response message containing the greetings
-message HelloReply {
-  string message = 1;
-}
-
 
 message Request {
   string queryURL = 1;
