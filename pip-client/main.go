@@ -18,12 +18,6 @@ import (
 	pb "github.com/infobloxopen/themis/pipservice"
 )
 
-const (
-	address = "localhost:50051"
-	//address     = "10.82.16.198:50051"
-	defaultName = "pip-client"
-)
-
 type QueryResult struct {
 	total uint64
 	found uint64
@@ -69,7 +63,7 @@ func main() {
 	log.Debugf("inital test results: %+v", testResult)
 
 	// create the gRPC client
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(conf.ServerAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -132,7 +126,7 @@ func loadTestData(inputFile string, lst *[]string) error {
 // example func to make a single query at a time
 func queryURL(url string) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.Config().ServerAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
