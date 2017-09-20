@@ -39,7 +39,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 
 func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Response, error) {
-	log.Debug("enter GetCategories()")
+	//log.Debug("enter GetCategories()")
 	url := in.GetQueryURL()
 
 	c_category := C.RateUrl(C.CString(url))

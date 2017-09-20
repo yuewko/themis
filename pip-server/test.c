@@ -227,7 +227,7 @@ int Init() {
  must be free'ed in calling code
 */
 char *RateUrl(const char *url) {
-    return rate_url(TsHandle, url, 2);
+    return rate_url(TsHandle, url, 0);
 }
 
 /*
