@@ -32,12 +32,6 @@ func init() {
 // server is used to implement helloworld.GreeterServer.
 type server struct{}
 
-// SayHello implements helloworld.GreeterServer
-func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Debug("enter SayHello()")
-	return &pb.HelloReply{Message: "Hello " + in.Name}, nil
-}
-
 func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Response, error) {
 	//log.Debug("enter GetCategories()")
 	url := in.GetQueryURL()

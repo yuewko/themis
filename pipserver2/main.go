@@ -7,16 +7,25 @@ package main
 import "C"
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"net"
 	"unsafe"
 
+	log "github.com/Sirupsen/logrus"
+	pb "github.com/infobloxopen/themis/pipservice"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"github.com/Jeffail/tunny"
 )
 
 
 var Id int
+
+const (
+	port = ":50051"
+	numWorkers = 1
+)
 
 
 // Implements TunnyWorker and TunnyExtendedWorker interfaces
@@ -31,13 +40,14 @@ func (cw *CategoryWorker)TunnyJob(obj interface{}) (res interface{}) {
 	url, _ := obj.(string)
 	fmt.Printf("Getting category for '%s'...%d\n", url, cw.id)
 	c_category := C.RateUrl(cw.cfi_handle, C.CString(url))
+	var category string
 	if c_category != nil {
-		//category := C.GoString(c_category)
+		category = C.GoString(c_category)
 		//fmt.Printf("Category is '%s'\n\n", category)
 	}
-	fmt.Println("")
+	//fmt.Println("")
 
-	return "Dummy"
+	return category
 }
 
 func (cw *CategoryWorker) TunnyReady() bool {
@@ -56,9 +66,27 @@ func (cw *CategoryWorker) TunnyTerminate() {
 }
 
 
+type server struct{
+	workPool *tunny.WorkPool
+}
+
+func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Response, error) {
+	//log.Debug("enter GetCategories()")
+	url := in.GetQueryURL()
+
+	resp := pb.Response{}
+	workRes, err := s.workPool.SendWork(url)
+	if err != nil {
+		resp.Categories = workRes.(string)
+	}
+	return &resp, err
+}
+
+
 func main() {
-	// _ = C.RateUrl(C.CString("www.abcnews.com"))
-	numWorkers := 4
+	log.SetLevel(log.DebugLevel)
+
+	// Create worker thread pool
 	workers := make([]tunny.TunnyWorker, numWorkers)
 	for i, _ := range workers {
 		workers[i] = &CategoryWorker{}
@@ -67,20 +95,17 @@ func main() {
 	defer pool.Close()
 
 
-	url_lst := "urls.lst"
-	f, err := os.Open(url_lst)
+	log.Infoln("Starting server on port: %s", port)
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		fmt.Printf("Cannot open '%s'\n", url_lst)
-		os.Exit(1)
+		log.Fatalf("failed to listen: %v", err)
 	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		url := scanner.Text()
-
-		fmt.Printf("Getting category for '%s'...\n", url)
-		res, _ := pool.SendWork(url)
-		fmt.Printf("res is '%s'\n\n", res);
+	s := grpc.NewServer()
+	pb.RegisterPIPServer(s, &server{workPool: pool})
+	//pb.RegisterGreeterServer(s, &server{})
+	// Register reflection service on gRPC server.
+	reflection.Register(s)
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
