@@ -8,7 +8,7 @@ import "C"
 
 import (
 	"encoding/json"
-//	"fmt"
+	//	"fmt"
 	"net"
 	"os"
 	"unsafe"
@@ -27,7 +27,7 @@ import (
 // func C.Init() int
 
 func init() {
-    _ = C.Init()
+	_ = C.Init()
 }
 
 // server is used to implement helloworld.GreeterServer.
@@ -56,6 +56,8 @@ func getCategoryMap(categoryFile string) (map[string]string, error) {
 
 func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response, error) {
 	responseStatus := pb.Response_OK
+
+	log.Debugf("request: %+v", in)
 
 	queryType := in.GetQueryType()
 	if queryType != supportedQueryType {
@@ -88,10 +90,16 @@ func main() {
 		log.Fatalf("Cannot get PIP connection for PIP service '%s': %s", pipServiceName, err)
 	}
 
+	log.Infof("Default server listening address: %s", conn)
+	// default: 127.0.0.1:5368
+	// conn = "10.82.16.198:5368"
+	// conn = ":5368"
+	log.Infof("Active server listening address: %s", conn)
 	lis, err := net.Listen("tcp", conn)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
 
 	s := grpc.NewServer()
 	pb.RegisterPIPServer(s, &server{})
