@@ -67,7 +67,6 @@ func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response
 	inAttrs := in.GetAttributes()
 	// fmt.Printf("inAttrs[0] is '%v'\n", inAttrs[0])
 	domainStr := inAttrs[0].GetValue()
-
 	c_category := C.RateUrl(C.CString(domainStr))
 	var category string
 	if c_category != nil {
