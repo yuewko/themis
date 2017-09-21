@@ -11,6 +11,20 @@
 
 char Dummy[1024]="Dummy";
 
+void StartUp() {
+    cfi_list_opts_t list_opts;
+    void *r_cfi=NULL;
+
+    r_cfi = cfi_setup( "cfi.conf", stdout);
+    memset(&list_opts, 0, sizeof(list_opts));
+    list_opts.lname = "rdlist";
+    list_opts.path = "/home/ec2-user/ufclient/data/wcd-r0.a.rd";
+    if (cfi_list_create_opts(r_cfi, &list_opts) != 1) {
+        fprintf(stderr, "Cannot open direct list '%s'\n", list_opts.path);
+    }
+}
+ 
+
 void *Init() {
      char *cfg_file="cfi.conf";
      
