@@ -71,7 +71,7 @@ func main() {
 	c := pb.NewPIPClient(conn)
 
 	runConcurrentQuery(conf.NumOfWorkers, conf.TestDuration, c, &testData, testResult, stop)
-	qps, hitRate := aggregateResults(testResult, 5)
+	qps, hitRate := aggregateResults(testResult, conf.TestDuration)
 	//log.Infof("QPS: %d, Hit Rate: %v", qps, hitRate)
 	writeResultToFile(conf.TestResult, conf.NumOfWorkers, qps, hitRate)
 	log.Infoln("# Test is finished")
