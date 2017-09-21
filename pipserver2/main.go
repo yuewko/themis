@@ -24,7 +24,7 @@ var Id int
 
 const (
 	port = ":50051"
-	numWorkers = 1
+	numWorkers = 50
 )
 
 
@@ -85,6 +85,8 @@ func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Respons
 
 func main() {
 	log.SetLevel(log.DebugLevel)
+
+        C.StartUp()
 
 	// Create worker thread pool
 	workers := make([]tunny.TunnyWorker, numWorkers)
