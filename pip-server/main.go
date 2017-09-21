@@ -42,7 +42,9 @@ func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Respons
 	//log.Debug("enter GetCategories()")
 	url := in.GetQueryURL()
 
-	c_category := C.RateUrl(C.CString(url))
+	c_url := C.CString(url)
+	c_category := C.RateUrl(c_url)
+	C.free(c_url)
 
 	var category string
 	resp := pb.Response{}
