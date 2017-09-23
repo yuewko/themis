@@ -5,6 +5,8 @@
 #include "test.h"
 #include "ts.h"
 
+#define USE_MALLOC (0)
+
 static TS_Handle TsHandle=NULL;
 
 static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
@@ -18,10 +20,14 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 
      char cat_names[4000];
      int len = 0;
-     char delimiter[] = ",";
+     char *delimiter = ",";
      int delimiter_len = strlen(delimiter);
      int num_cats;
+#if USE_MALLOC
      unsigned int *cat_array=NULL;
+#else
+     unsigned int cat_array[100];
+#endif
      int i;
 
      if (TS_OK != TS_AttributesCreate(ts_handle, &attributes)) {
@@ -34,7 +40,7 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
      if (TS_OK != TS_CategoriesCreate(ts_handle, &categories)) {
 	  printf("TS_CategoriesCreate failed. Abort.\n");
 	  TS_AttributesDestroy(ts_handle, &attributes);
-	  TS_HandleDestroy(&ts_handle);
+	  //TS_HandleDestroy(&ts_handle);
 	  return ts_result;
      }
      // printf("After TS_CategoriesCreate()\n");
@@ -43,7 +49,7 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  printf("TS_CategoriesCategoryRemoveAll failed. Abort.\n");
 	  TS_AttributesDestroy(ts_handle, &attributes);
 	  TS_CategoriesDestroy(ts_handle, &categories);
-	  TS_HandleDestroy(&ts_handle);
+	  //TS_HandleDestroy(&ts_handle);
 	  return ts_result;
      }
      // printf("After TS_CategoriesCategoryRemoveAll()\n");
@@ -52,7 +58,7 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  printf("TS_UrlCreate failed. Abort.\n");
 	  TS_AttributesDestroy(ts_handle, &attributes);
 	  TS_CategoriesDestroy(ts_handle, &categories);
-	  TS_HandleDestroy(&ts_handle);
+	  //TS_HandleDestroy(&ts_handle);
 	  return ts_result;
      }
      // printf("After TS_UrlCreate()\n");
@@ -71,7 +77,7 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	      parsed_url,
 	      attributes,
 	      categories,
-	      NULL,
+	      &num_cats,
 	      0,
 	      TS_CAT_SET_LOADED,
 	      0,
@@ -92,12 +98,16 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
      }
 */
      // Get categories number
+/*
      if (TS_OK != TS_CategoriesCount(ts_handle, categories, &num_cats)) {
 	  printf("Get categories number error!\n");
      }
+*/
      // printf("After TS_CategoriesCount()\n");
 
+#if USE_MALLOC
      cat_array = (unsigned int*)malloc(num_cats+1);
+#endif
      // Get categories codes
      for (i=0; i<num_cats+1; i++)
 	  cat_array[i] = 0;
@@ -130,7 +140,6 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
 	  else {
 	       ts_result = strdup(cat_names);
 	       if (verbosity >= 2) {
-		    //
 		    printf("URL: '%s' is categorized as :'%s'\n", url, cat_names);
 /*
                     printf("Category Codes: \n");
@@ -145,9 +154,11 @@ static char *rate_url(TS_Handle ts_handle, const char *url, int verbosity)
      // printf("After TS_CategoriesToString()\n");
 
 done:
+#if USE_MALLOC
      if (cat_array != NULL) {
 	  free(cat_array);
      }
+#endif
      TS_AttributesDestroy(ts_handle, &attributes);
      TS_CategoriesDestroy(ts_handle, &categories);
      TS_UrlDestroy(ts_handle, &parsed_url);
@@ -182,6 +193,7 @@ int Init() {
        return 0;
   }
 
+/*
   if (TS_OK != TS_ActivateTrustedSource(
 	   TsHandle,
 	   TS_ACTIVATION_SERVER_DEFAULT,
@@ -202,6 +214,7 @@ int Init() {
 	 fprintf(stderr, "Error from server: %s\n", errors);
        }
   }
+*/
 
   /*  db_access_mode = TS_DATABASE_ACCESS_MEMORY; */
   if (TS_OK != TS_DatabaseLoad( TsHandle,
@@ -230,9 +243,7 @@ char *RateUrl(const char *url) {
     return rate_url(TsHandle, url, 2);
 }
 
-/*
 int main(int argc, char *argv[]) {
-     Init();
-     RateUrl("www.thesun.co.uk");
+    Init();
+    RateUrl("www.thesun.co.uk");
 }
-*/
