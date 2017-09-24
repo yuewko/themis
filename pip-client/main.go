@@ -16,7 +16,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
 
 	"google.golang.org/grpc"
 
@@ -54,9 +53,9 @@ func main() {
 	log.Debug("tests....")
 
 	// call sdk directly
-	log.Infoln("Initializing the SDK lib...")
-	_ = C.InitSDK()
-	defer C.DestroySDK()
+	// log.Infoln("Initializing the SDK lib...")
+	// _ = C.InitSDK()
+	// defer C.DestroySDK()
 
 	log.Info("Read test data into list...")
 	log.Debugf("before read: %+v", testData)
@@ -75,14 +74,14 @@ func main() {
 	log.Debugf("inital test results: %+v", testResult)
 
 	// create the gRPC client
-	// conn, err := grpc.Dial(conf.ServerAddress, grpc.WithInsecure())
-	// if err != nil {
-	// 	log.Fatalf("did not connect: %v", err)
-	// }
-	// defer conn.Close()
-	// c := pb.NewPIPClient(conn)
-
-	runConcurrentQuery(conf.NumOfWorkers, conf.TestDuration, &testData, testResult, stop)
+	conn, err := grpc.Dial(conf.ServerAddress, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewPIPClient(conn)
+	log.Infoln("Making queries concurrently ....")
+	runConcurrentQuery(c, conf.NumOfWorkers, conf.TestDuration, &testData, testResult, stop)
 	qps, hitRate := aggregateResults(testResult, conf.TestDuration)
 	//log.Infof("QPS: %d, Hit Rate: %v", qps, hitRate)
 	writeResultToFile(conf.TestResult, conf.NumOfWorkers, qps, hitRate)
@@ -162,8 +161,8 @@ func queryURL(url string) {
 
 }
 
-// used for go routing
-func queryFunc(testList *[]string, results chan QueryResult, stop chan bool) {
+// used for gorouties
+func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult, stop chan bool) {
 	log.Debug("Enter queryFunc goroutines...")
 	var result QueryResult
 	result.total = 0
@@ -188,10 +187,11 @@ func queryFunc(testList *[]string, results chan QueryResult, stop chan bool) {
 			url := (*testList)[randomIndex]
 			log.Debugf("make query: %s ", url)
 
-			//req := pb.Request{QueryURL: url}
+			req := pb.Request{QueryURL: url}
 
-			//resp, err := client.GetCategories(context.Background(), &req)
-			resp, err := GetCategoriesLocal(url)
+			// resp, err := GetCategoriesLocal(url)
+			resp, err := client.GetCategories(context.Background(), &req)
+
 			if err != nil {
 				log.Errorf("gRPC request GetCategories() error: %v", err)
 			}
@@ -207,12 +207,12 @@ func queryFunc(testList *[]string, results chan QueryResult, stop chan bool) {
 
 }
 
-func runConcurrentQuery(numOfWorker int, duration int,
+func runConcurrentQuery(client pb.PIPClient, numOfWorker int, duration int,
 	testList *[]string, results chan QueryResult, stop chan bool) {
 	log.Debugf("Start %d of query goroutines", numOfWorker)
 	startTime := time.Now()
 	for i := 0; i < numOfWorker; i++ {
-		go queryFunc(testList, results, stop)
+		go queryFunc(client, testList, results, stop)
 	}
 	// run the test for duration seconds
 	time.Sleep(time.Duration(duration) * time.Second)
@@ -263,6 +263,7 @@ func writeResultToFile(outFile string, numThread int, qps uint32, hitRate float3
 
 }
 
+/*
 // GetCategoriesLocal calls CGO directly
 func GetCategoriesLocal(url string) (*pb.Response, error) {
 	cURL := C.CString(url)
@@ -287,3 +288,4 @@ func GetCategoriesLocal(url string) (*pb.Response, error) {
 
 	return &resp, nil
 }
+*/
