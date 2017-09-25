@@ -15,7 +15,7 @@ const (
 	defaultTestResult    = "test.output"
 	defaultNumOfWorkers  = 16
 	defaultTestDuration  = 10
-	defaultServerAddress = "127.0.0.1:5368"
+	defaultServerAddress = "localhost:50051"
 )
 
 var (

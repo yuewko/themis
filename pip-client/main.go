@@ -1,5 +1,11 @@
 package main
 
+// #cgo LDFLAGS: libts.a -lpthread -ldl -lrt -lssl -lcrypto
+// #include <stdlib.h>
+// #include "ts.h"
+// #include "test.h"
+import "C"
+
 import (
 	"bufio"
 	"context"
@@ -16,12 +22,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/infobloxopen/themis/pip-client/cfg"
 	pb "github.com/infobloxopen/themis/pipservice"
-)
-
-const (
-	address = "localhost:50051"
-	//address     = "10.82.16.198:50051"
-	defaultName = "pip-client"
 )
 
 type QueryResult struct {
@@ -52,6 +52,11 @@ func main() {
 	log.SetLevel(getLogLevelFromStr(conf.LogLevel))
 	log.Debug("tests....")
 
+	// call sdk directly
+	// log.Infoln("Initializing the SDK lib...")
+	// _ = C.InitSDK()
+	// defer C.DestroySDK()
+
 	log.Info("Read test data into list...")
 	log.Debugf("before read: %+v", testData)
 
@@ -61,7 +66,7 @@ func main() {
 		return
 	}
 
-	log.Debugf("after read: %+v", testData)
+	//log.Debugf("after read: %+v", testData)
 	log.Debugf("%d of domains are loaded.", len(testData))
 
 	// init test resultsf chan to collect results from multiple threads
@@ -69,15 +74,15 @@ func main() {
 	log.Debugf("inital test results: %+v", testResult)
 
 	// create the gRPC client
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(conf.ServerAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 	c := pb.NewPIPClient(conn)
-
-	runConcurrentQuery(conf.NumOfWorkers, conf.TestDuration, c, &testData, testResult, stop)
-	qps, hitRate := aggregateResults(testResult, 5)
+	log.Infoln("Making queries concurrently ....")
+	runConcurrentQuery(c, conf.NumOfWorkers, conf.TestDuration, &testData, testResult, stop)
+	qps, hitRate := aggregateResults(testResult, conf.TestDuration)
 	//log.Infof("QPS: %d, Hit Rate: %v", qps, hitRate)
 	writeResultToFile(conf.TestResult, conf.NumOfWorkers, qps, hitRate)
 	log.Infoln("# Test is finished")
@@ -132,7 +137,7 @@ func loadTestData(inputFile string, lst *[]string) error {
 // example func to make a single query at a time
 func queryURL(url string) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(cfg.Config().ServerAddress, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -156,7 +161,7 @@ func queryURL(url string) {
 
 }
 
-// used for go routing
+// used for gorouties
 func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult, stop chan bool) {
 	log.Debug("Enter queryFunc goroutines...")
 	var result QueryResult
@@ -184,7 +189,9 @@ func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult
 
 			req := pb.Request{QueryURL: url}
 
+			// resp, err := GetCategoriesLocal(url)
 			resp, err := client.GetCategories(context.Background(), &req)
+
 			if err != nil {
 				log.Errorf("gRPC request GetCategories() error: %v", err)
 			}
@@ -200,7 +207,7 @@ func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult
 
 }
 
-func runConcurrentQuery(numOfWorker int, duration int, client pb.PIPClient,
+func runConcurrentQuery(client pb.PIPClient, numOfWorker int, duration int,
 	testList *[]string, results chan QueryResult, stop chan bool) {
 	log.Debugf("Start %d of query goroutines", numOfWorker)
 	startTime := time.Now()
@@ -255,3 +262,30 @@ func writeResultToFile(outFile string, numThread int, qps uint32, hitRate float3
 	}
 
 }
+
+/*
+// GetCategoriesLocal calls CGO directly
+func GetCategoriesLocal(url string) (*pb.Response, error) {
+	cURL := C.CString(url)
+	defer C.free(unsafe.Pointer(cURL))
+	// Get the categories in C string
+	//mutex.Lock()
+	cCategories := C.RateUrl(cURL)
+	defer C.free(unsafe.Pointer(cCategories))
+	//mutex.Unlock()
+
+	var goCategories string
+	goCategories = C.GoString(cCategories)
+
+	resp := pb.Response{}
+	if goCategories != "uncategorized" {
+		resp.Status = pb.Response_OK
+	} else {
+		resp.Status = pb.Response_NOTFOUND
+	}
+
+	resp.Categories = goCategories
+
+	return &resp, nil
+}
+*/

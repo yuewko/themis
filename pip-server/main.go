@@ -1,5 +1,3 @@
-//go:generate protoc -I ../helloworld --go_out=plugins=grpc:../helloworld ../helloworld/helloworld.proto
-
 package main
 
 // #cgo LDFLAGS: libts.a -lpthread -ldl -lrt -lssl -lcrypto
@@ -23,12 +21,6 @@ const (
 	port = ":50051"
 )
 
-// func C.Init() int
-
-func init() {
-	_ = C.Init()
-}
-
 // server is used to implement helloworld.GreeterServer.
 type server struct{}
 
@@ -41,30 +33,30 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Response, error) {
 	//log.Debug("enter GetCategories()")
 	url := in.GetQueryURL()
+	cURL := C.CString(url)
+	defer C.free(unsafe.Pointer(cURL))
+	// Get the categories in C string
+	cCategories := C.RateUrl(cURL)
+	defer C.free(unsafe.Pointer(cCategories))
 
-	c_url := C.CString(url)
-	c_category := C.RateUrl(c_url)
-	C.free(c_url)
-
-	var category string
+  goCategories := C.GoString(cCategories)
 	resp := pb.Response{}
-
-	if c_category != nil {
+	if goCategories != "uncategorized" {
 		resp.Status = pb.Response_OK
-		category = C.GoString(c_category)
-		C.free(unsafe.Pointer(c_category))
-
 	} else {
 		resp.Status = pb.Response_NOTFOUND
-		category = "un-categorized"
 	}
-	resp.Categories = category
+
+	resp.Categories = goCategories
 
 	return &resp, nil
 }
 
 func main() {
 	log.SetLevel(log.DebugLevel)
+	log.Infoln("Iniitializing McAfee TS SDK")
+	_ = C.InitSDK()
+	defer C.DestroySDK()
 
 	log.Infoln("Starting server on port: %s", port)
 	lis, err := net.Listen("tcp", port)
@@ -76,6 +68,7 @@ func main() {
 	//pb.RegisterGreeterServer(s, &server{})
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
+	log.Infoln("Serving requests....")
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
