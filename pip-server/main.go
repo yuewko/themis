@@ -39,9 +39,7 @@ func (s *server) GetCategories(ctx context.Context, in *pb.Request) (*pb.Respons
 	cCategories := C.RateUrl(cURL)
 	defer C.free(unsafe.Pointer(cCategories))
 
-	var goCategories string
-	goCategories = C.GoString(cCategories)
-
+  goCategories := C.GoString(cCategories)
 	resp := pb.Response{}
 	if goCategories != "uncategorized" {
 		resp.Status = pb.Response_OK
