@@ -15,12 +15,11 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/infobloxopen/themis/pip-client/cfg"
-	pb "github.com/infobloxopen/themis/pipservice"
+	pb "github.com/infobloxopen/themis/pip-service"
 )
 
 const (
-	address = "localhost:50051"
-	//address     = "10.82.16.198:50051"
+	address     = "127.0.0.1:50051"
 	defaultName = "pip-client"
 )
 
@@ -129,27 +128,7 @@ func loadTestData(inputFile string, lst *[]string) error {
 	return nil
 }
 
-// example func to make a single query at a time
-func queryURL(url string) {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewPIPClient(conn)
-
-	req := pb.Request{QueryURL: url}
-
-	resp, err := c.GetCategories(context.Background(), &req)
-	if err != nil {
-		log.Fatalf("could not be categorized: %v", err)
-	}
-	log.Debugf("Categorized: %s", resp.Categories)
-
-}
-
-// used for go routing
+// used for go routine
 func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult, stop chan bool) {
 	log.Debug("Enter queryFunc goroutines...")
 	var result QueryResult
@@ -175,9 +154,9 @@ func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult
 			url := (*testList)[randomIndex]
 			log.Debugf("make query: %s ", url)
 
-			req := pb.Request{QueryURL: url}
+			req := pb.Request{QueryType: "domain-category"}
 
-			resp, err := client.GetCategories(context.Background(), &req)
+			resp, err := client.GetAttribute(context.Background(), &req)
 			if err != nil {
 				log.Errorf("gRPC request GetCategories() error: %v", err)
 			}
@@ -187,7 +166,7 @@ func queryFunc(client pb.PIPClient, testList *[]string, results chan QueryResult
 
 			result.total++
 
-			log.Debugf("%s is categorized as: \t%s", url, resp.Categories)
+			// log.Debugf("%s is categorized as: \t%s", url, resp.Categories)
 		}
 	}
 
