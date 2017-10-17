@@ -85,7 +85,7 @@ func (s *server) GetAttribute(ctx context.Context, in *pb.Request) (*pb.Response
 func main() {
 	// _ = C.RateUrl(C.CString("www.abcnews.com"))
 	pipServiceName := "mcafee-ts"
-	conn, err := pb.GetPIPConnection(pipServiceName)
+	conn, err := pb.GetPIPServiceEndpoint(pipServiceName)
 	if err != nil {
 		log.Fatalf("Cannot get PIP connection for PIP service '%s': %s", pipServiceName, err)
 	}
