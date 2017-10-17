@@ -6,6 +6,8 @@ import (
 	"github.com/infobloxopen/go-trees/domaintree"
 	"github.com/infobloxopen/go-trees/iptree"
 	"github.com/infobloxopen/go-trees/strtree"
+
+	ps "github.com/infobloxopen/themis/pip-service"
 )
 
 const (
@@ -38,10 +40,11 @@ var (
 type Context struct {
 	a map[string]map[int]AttributeValue
 	c *LocalContentStorage
+	p *ps.ConnectionManager
 }
 
-func NewContext(c *LocalContentStorage, count int, f func(i int) (string, AttributeValue, error)) (*Context, error) {
-	ctx := &Context{a: map[string]map[int]AttributeValue{}, c: c}
+func NewContext(c *LocalContentStorage, p *ps.ConnectionManager, count int, f func(i int) (string, AttributeValue, error)) (*Context, error) {
+	ctx := &Context{a: map[string]map[int]AttributeValue{}, c: c, p: p}
 
 	for i := 0; i < count; i++ {
 		ID, v, err := f(i)

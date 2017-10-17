@@ -23,6 +23,8 @@ import (
 	pbs "github.com/infobloxopen/themis/pdp-service"
 	"github.com/infobloxopen/themis/pdp/jcon"
 	"github.com/infobloxopen/themis/pdp/yast"
+
+	ps "github.com/infobloxopen/themis/pip-service"
 )
 
 type Transport struct {
@@ -44,13 +46,16 @@ type Server struct {
 
 	c  *pdp.LocalContentStorage
 	ct map[string]*pdp.LocalContentStorageTransaction
+
+	pcm *ps.ConnectionManager
 }
 
 func NewServer() *Server {
 	return &Server{
 		queue: NewQueue(),
 		c:     pdp.NewLocalContentStorage(nil),
-		ct:    make(map[string]*pdp.LocalContentStorageTransaction)}
+		ct:    make(map[string]*pdp.LocalContentStorageTransaction),
+		pcm:   ps.NewConnectionManager()}
 }
 
 func (s *Server) LoadPolicies(path string) error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/infobloxopen/themis/pdp"
 	pb "github.com/infobloxopen/themis/pdp-service"
+	ps "github.com/infobloxopen/themis/pip-service"
 )
 
 func makeEffect(effect int) (pb.Response_Effect, error) {
@@ -52,8 +53,8 @@ func makeFailEffect(effect pb.Response_Effect) (pb.Response_Effect, error) {
 	return pb.Response_INDETERMINATE, newUnknownEffectError(int(effect))
 }
 
-func (s *Server) newContext(c *pdp.LocalContentStorage, in *pb.Request) (*pdp.Context, error) {
-	ctx, err := pdp.NewContext(c, len(in.Attributes), func(i int) (string, pdp.AttributeValue, error) {
+func (s *Server) newContext(c *pdp.LocalContentStorage, m *ps.ConnectionManager, in *pb.Request) (*pdp.Context, error) {
+	ctx, err := pdp.NewContext(c, m, len(in.Attributes), func(i int) (string, pdp.AttributeValue, error) {
 		a := in.Attributes[i]
 
 		t, ok := pdp.TypeIDs[strings.ToLower(a.Type)]
@@ -92,8 +93,8 @@ func (s *Server) newAttributes(obligations []pdp.AttributeAssignmentExpression, 
 	return attrs, nil
 }
 
-func (s *Server) rawValidate(p *pdp.PolicyStorage, c *pdp.LocalContentStorage, in *pb.Request) (pb.Response_Effect, []error, []*pb.Attribute) {
-	ctx, err := s.newContext(c, in)
+func (s *Server) rawValidate(p *pdp.PolicyStorage, c *pdp.LocalContentStorage, m *ps.ConnectionManager, in *pb.Request) (pb.Response_Effect, []error, []*pb.Attribute) {
+	ctx, err := s.newContext(c, m, in)
 	if err != nil {
 		return pb.Response_INDETERMINATE, []error{err}, nil
 	}
@@ -132,9 +133,10 @@ func (s *Server) Validate(ctx context.Context, in *pb.Request) (*pb.Response, er
 	s.RLock()
 	p := s.p
 	c := s.c
+	m := s.pcm
 	s.RUnlock()
 
-	effect, errs, attrs := s.rawValidate(p, c, in)
+	effect, errs, attrs := s.rawValidate(p, c, m, in)
 
 	status := "Ok"
 	if len(errs) > 1 {
