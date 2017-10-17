@@ -25,6 +25,8 @@ import (
 	pbs "github.com/infobloxopen/themis/pdp-service"
 	"github.com/infobloxopen/themis/pdp/jcon"
 	"github.com/infobloxopen/themis/pdp/yast"
+
+	ps "github.com/infobloxopen/themis/pip-service"
 )
 
 type transport struct {
@@ -48,6 +50,7 @@ type server struct {
 
 	p *pdp.PolicyStorage
 	c *pdp.LocalContentStorage
+	pcm *ps.ConnectionManager
 
 	softMemWarn *time.Time
 	backMemWarn *time.Time
@@ -80,6 +83,7 @@ func newServer() *server {
 		c:         pdp.NewLocalContentStorage(nil),
 		gcMax:     gcp,
 		gcPercent: gcp,
+		pcm:       ps.NewConnectionManager(),
 		logLevel:  log.GetLevel()}
 }
 
