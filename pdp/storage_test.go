@@ -252,7 +252,7 @@ func TestStorageTransactionalUpdate(t *testing.T) {
 		t.Fatalf("Expected no error but got %T (%s)", err, err)
 	}
 
-	ctx, err := NewContext(nil, 1, func(i int) (string, AttributeValue, error) {
+	ctx, err := NewContext(nil, nil, 1, func(i int) (string, AttributeValue, error) {
 		return "s", MakeStringValue("test"), nil
 	})
 	if err != nil {
@@ -283,7 +283,7 @@ func TestStorageTransactionalUpdate(t *testing.T) {
 		}
 	}
 
-	ctx, err = NewContext(nil, 1, func(i int) (string, AttributeValue, error) {
+	ctx, err = NewContext(nil, nil, 1, func(i int) (string, AttributeValue, error) {
 		return "s", MakeStringValue("no test"), nil
 	})
 	if err != nil {

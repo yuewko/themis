@@ -6,25 +6,24 @@ import (
 	"strings"
 
 	ps "github.com/infobloxopen/themis/pip-service"
-//	"google.golang.org/grpc"
 )
 
 const pIPServicePort = ":5356"
 
 type PIPSelector struct {
-	service     string
+	service string
 
-	queryType   string
-	path        []Expression
-	t           int
+	queryType string
+	path      []Expression
+	t         int
 }
 
 func MakePIPSelector(service, queryType string, path []Expression, t int) (PIPSelector, error) {
 	return PIPSelector{
-		service:     service,
-		queryType:   queryType,
-		path:        path,
-		t:           t}, nil
+		service:   service,
+		queryType: queryType,
+		path:      path,
+		t:         t}, nil
 }
 
 func (s PIPSelector) GetResultType() int {
@@ -71,7 +70,7 @@ func (s PIPSelector) getAttributeValue(ctx *Context) (AttributeValue, error) {
 	// For now, assume response only contain one attribute
 	val := res[0].GetValue()
 	t := int(res[0].GetType())
-	fmt.Printf("PIP returned value='%v, type = %d'\n", val, t)
+	// fmt.Printf("PIP returned value='%v, type = %d'\n", val, t)
 	if s.t != t {
 		return undefinedValue, bindError(fmt.Errorf("Unexpected response value type '%d', expecting '%d'", t, s.t), s.describe())
 	}
