@@ -80,10 +80,9 @@ func (ctx context) unmarshalSelector(d *json.Decoder) (pdp.Expression, error) {
 		return ret, bindErrorf(newInvalidTypeError(t), "selector(%s)", uri)
 	}
 
-	var e error
-	ret, e = selector.MakeSelector(strings.ToLower(id.Scheme), id.Opaque, path, t)
-	if e != nil {
-		return ret, bindErrorf(e, "selector(%s)", uri)
+	ret, err = selector.MakeSelector(strings.ToLower(id.Scheme), id.Opaque, path, t)
+	if err != nil {
+		return ret, bindErrorf(err, "selector(%s)", uri)
 	}
 	return ret, nil
 }
