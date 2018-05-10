@@ -203,6 +203,15 @@ func (c *Context) calculateStringExpression(e Expression) (string, error) {
 	return v.str()
 }
 
+func (c *Context) calculateListOfStringExpression(e Expression) ([]string, error) {
+	v, err := e.Calculate(c)
+	if err != nil {
+		return nil, err
+	}
+
+	return v.listOfStrings()
+}
+
 func (c *Context) calculateIntegerExpression(e Expression) (int64, error) {
 	v, err := e.Calculate(c)
 	if err != nil {
