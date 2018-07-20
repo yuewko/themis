@@ -152,6 +152,8 @@ type options struct {
 
 // Server structure is PDP server object
 type Server struct {
+	PDPService
+
 	sync.RWMutex
 
 	opts options
@@ -167,8 +169,8 @@ type Server struct {
 
 	q *queue
 
-	p *pdp.PolicyStorage
-	c *pdp.LocalContentStorage
+	//	p *pdp.PolicyStorage
+	//	c *pdp.LocalContentStorage
 
 	softMemWarn *time.Time
 	backMemWarn *time.Time
@@ -199,17 +201,19 @@ func NewServer(opts ...Option) *Server {
 		memProfBaseDumpDone = make(chan uint32)
 	}
 
-	return &Server{
+	s := &Server{
 		opts:                o,
 		errCh:               make(chan error, 100),
 		q:                   newQueue(),
-		c:                   pdp.NewLocalContentStorage(nil),
 		memProfBaseDumpDone: memProfBaseDumpDone,
 	}
+	s.PDPService.opts = o
+	s.c = pdp.NewLocalContentStorage(nil)
+	return s
 }
 
 // LoadPolicies loads policies from file
-func (s *Server) LoadPolicies(path string) error {
+func (s *PDPService) LoadPolicies(path string) error {
 	if len(path) <= 0 {
 		return nil
 	}
@@ -252,7 +256,7 @@ func (s *Server) ReadPolicies(r io.Reader) error {
 }
 
 // LoadContent loads content from files
-func (s *Server) LoadContent(paths []string) error {
+func (s *PDPService) LoadContent(paths []string) error {
 	items := []*pdp.LocalContent{}
 	for _, path := range paths {
 		err := func() error {
